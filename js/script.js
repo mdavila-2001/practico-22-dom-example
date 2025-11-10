@@ -1,14 +1,48 @@
-//Inicializamos nuestro arreglo de personas con dos objetos
-const personas = [
-  {
-    nombre: "Juan Perez",
-    edad: 18,
-  },
-  {
-    nombre: "Maria Loza",
-    edad: 21,
-  },
+// Clave usada en localStorage
+const STORAGE_KEY = "personas";
+
+const defaultPersonas = [
+  { nombre: "Juan Perez", edad: 18, email: "juan.perez@gmail.com" },
+  { nombre: "Maria Loza", edad: 21, email: "maria.loza@gmail.com" },
 ];
+
+// Arreglo en memoria (se carga desde localStorage al inicializar)
+let personas = [];
+
+function inicializar() {
+  cargarPersonas();
+  actualizarLista();
+}
+
+// Guarda el arreglo personas en localStorage
+function guardarPersonas() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(personas));
+  } catch (e) {
+    // Si ocurre un error (ej. storage lleno), mostramos por consola
+    console.error("Error guardando en localStorage:", e);
+  }
+}
+
+function cargarPersonas() {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      // Validamos que sea un arreglo
+      if (Array.isArray(parsed)) {
+        personas = parsed;
+        return;
+      }
+    }
+  } catch (e) {
+    console.error("Error leyendo localStorage:", e);
+  }
+
+  // Si no hay datos válidos en localStorage, usamos los por defecto
+  personas = defaultPersonas.slice();
+  guardarPersonas();
+}
 
 function agregarPersona() {
   //Obtenemos el elemento para mostrar un error del nombre
@@ -26,6 +60,8 @@ function agregarPersona() {
 
   //Obtenemos el input donde se ingresa la edad
   const inputEdad = document.querySelector("#input-edad");
+
+  const inputEmail = document.querySelector("#input-email");
 
   //Creamos una variable que indica si el formulario tiene error
   //Inicialmente suponemos que el fomulario NO tiene error
@@ -57,6 +93,15 @@ function agregarPersona() {
     hayError = true;
   }
 
+  let email = document.querySelector("#input-email").value.trim();
+  if (email === "") {
+    //De ser asi, colocamos el mensaje de error al contenido del elemento para mostrar el error
+    const msgErrorEmail = document.querySelector("#msg-error-email");
+    msgErrorEmail.innerHTML = "Debe ingresar un email";
+    //Le asigamos el valor true indicando que el formulario tiene error
+    hayError = true;
+  }
+
   //Si el formulario tiene algun error (valores invalidos)
   if (hayError) {
     //Es lo mismo que escribir hayError === true
@@ -70,6 +115,7 @@ function agregarPersona() {
   const nuevaPersona = {
     nombre: nombre,
     edad: edad,
+    email: email,
   };
 
   //Ingresamos el nuevo objeto persona dentro del arreglo
@@ -77,8 +123,10 @@ function agregarPersona() {
   //Limpiamos los inputs
   inputNombre.value = "";
   inputEdad.value = "";
+  inputEmail.value = "";
 
-  //Actualizamos la tabla de personas para reflejar los cambios en el arreglo
+  // Guardamos y actualizamos la tabla
+  guardarPersonas();
   actualizarLista();
 }
 
@@ -95,7 +143,8 @@ function eliminar(i) {
   //Si la respuesta es SI, eliminamos la persona que se encuentra en el indice del arreglo
   //que se pasó por parametro a la funcion
   personas.splice(i, 1);
-  //Actualizamos la tabla de personas para reflejar los cambios en el arreglo
+  // Guardamos y actualizamos la tabla
+  guardarPersonas();
   actualizarLista();
 }
 
@@ -107,7 +156,7 @@ function actualizarLista() {
     //El conenido de la tabla será un mensaje que indique que no hay personas registrados
     listaNombresHtml.innerHTML = `
             <tr>
-                <td colspan="3">No hay personas registradas</td>
+                <td colspan="4">No hay personas registradas</td>
             </tr>`;
     return;
   }
@@ -134,6 +183,8 @@ function actualizarLista() {
       persona.nombre +
       "</td><td>" +
       persona.edad +
+      "</td><td>" +
+      persona.email +
       "</td></tr>";
   }
 
